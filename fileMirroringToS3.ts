@@ -4,6 +4,7 @@ import * as AdmZip from 'adm-zip';
 import AWS from 'aws-sdk';
 import puppeteer from 'puppeteer';
 import params from './params.json';
+const tempDir = './temp';
 const node_xj = require("xls-to-json");
 
 const s3bucket = new AWS.S3({
@@ -18,12 +19,12 @@ export async function downloadSource() {
     args: ['--no-sandbox']
   });
   const page = await browser.newPage();
-  if (!fs.existsSync('./twch')) {
-    fs.mkdirSync('./twch');
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir);
   }
   await (page as any)._client.send('Page.setDownloadBehavior', {
     behavior: 'allow',
-    downloadPath: path.resolve('./twch'),
+    downloadPath: path.resolve(tempDir),
   });
   await page.goto(params.SOURCE_URL);
   await page.setDefaultNavigationTimeout(timeout);
@@ -31,16 +32,15 @@ export async function downloadSource() {
 
   try {
     await new Promise<void>((ok, fail) => {
-      page.on('response', (event: puppeteer.HTTPResponse) => {
-        if (event.status() === 200) {
-          if (event.url() === params.SOURCE_URL) {
-            ok();
-          }
-        } else {
-          fail(event.statusText);
+      let downloadDoneChecker = setInterval(() => {
+        const files = fs.readdirSync(tempDir);
+        if (files.some((file: string) => /.*xls$/.test(file))) {
+          clearInterval(downloadDoneChecker);
+          ok();
         }
-      });
+      }, 500);
     });
+
     console.log('File download done!');
     await browser.close();
   } catch (error) {
@@ -49,11 +49,11 @@ export async function downloadSource() {
 }
 
 async function xlsToJson() {
-  const files = fs.readdirSync('./twch');
+  const files = fs.readdirSync(tempDir);
   return new Promise<void>((ok, fail) => {
     node_xj(
       {
-        input: `./twch/${files[0]}`, // input xls
+        input: `${tempDir}/${files[0]}`, // input xls
         rowsToSkip: 0, // number of rows to skip at the top of the sheet; defaults to 0
         allowEmptyKey: false, // avoids empty keys in the output, example: {"": "something"}; default: true
       },
@@ -91,6 +91,7 @@ export async function fileMirroringToS3() {
   try {
     await downloadSource();
     const data = Buffer.from(JSON.stringify(await xlsToJson()));
+    fs.rmSync(tempDir, {recursive: true, force: true});
     const zip = new AdmZip.default();
     zip.addFile('a.json', data);
     await uploadObjectToS3Bucket(params.S3_OBJECT_NAME, zip.toBuffer());
