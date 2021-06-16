@@ -11,28 +11,9 @@ const s3bucket = new AWS.S3({
   secretAccessKey: params.IAM_USER_SECRET
 });
 
-async function uploadObjectToS3Bucket(objectName: string, objectData: any) {
-  return new Promise<void>((ok, fail) => {
-    const s3params: AWS.S3.PutObjectRequest = {
-      Bucket: params.BUCKET_NAME,
-      Key: objectName,
-      Body: objectData,
-      ACL: 'public-read'
-    };
-    s3bucket.upload(s3params, function (err: Error, data: { Location: any; }) {
-      if (err) {
-        fail(err);
-        return;
-      }
-
-      ok();
-    });
-  });
-}
-
 export async function downloadSource() {
   const timeout = 5 * 60 * 1000;
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   if (!fs.existsSync('./twch')) {
     fs.mkdirSync('./twch');
@@ -66,7 +47,6 @@ export async function downloadSource() {
 
 async function xlsToJson() {
   const files = fs.readdirSync('./twch');
-  //fs.renameSync(`./twch/${files[0]}`, './twch/a.xls');
   return new Promise<void>((ok, fail) => {
     node_xj(
       {
@@ -82,6 +62,25 @@ async function xlsToJson() {
         }
       }
     );
+  });
+}
+
+async function uploadObjectToS3Bucket(objectName: string, objectData: any) {
+  return new Promise<void>((ok, fail) => {
+    const s3params: AWS.S3.PutObjectRequest = {
+      Bucket: params.BUCKET_NAME,
+      Key: objectName,
+      Body: objectData,
+      ACL: 'public-read'
+    };
+    s3bucket.upload(s3params, function (err: Error, data: { Location: any; }) {
+      if (err) {
+        fail(err);
+        return;
+      }
+
+      ok();
+    });
   });
 }
 
