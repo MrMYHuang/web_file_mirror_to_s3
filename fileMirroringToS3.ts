@@ -13,7 +13,10 @@ const s3bucket = new AWS.S3({
 
 export async function downloadSource() {
   const timeout = 5 * 60 * 1000;
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox']
+  });
   const page = await browser.newPage();
   if (!fs.existsSync('./twch')) {
     fs.mkdirSync('./twch');
