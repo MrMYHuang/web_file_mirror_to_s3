@@ -1,5 +1,5 @@
 {
-  "name": "test",
+  "name": "web_file_mirror_to_s3",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
