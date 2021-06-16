@@ -1,6 +1,6 @@
 const lib = require('./dist/fileMirroringToS3');
 
-lib.downloadSource();
+lib.fileMirroringToS3();
 
 exports.handler = async (event) => {
     let response;
