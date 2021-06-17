@@ -15,7 +15,7 @@ const s3bucket = new AWS.S3({
 export async function downloadSource() {
   const timeout = 5 * 60 * 1000;
   const browser = await puppeteer.launch({
-    executablePath: '/usr/bin/chrome',
+    executablePath: '/usr/bin/google-chrome',
     headless: true,
     args: ['--no-sandbox'],
   });
