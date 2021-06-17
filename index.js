@@ -1,20 +1,11 @@
 const lib = require('./dist/fileMirroringToS3');
 
-lib.fileMirroringToS3();
-
-exports.handler = async (event) => {
-    let response;
-    try {
-        await lib.fileMirroringToS3();
-        response = {
-            statusCode: 200,
-            body: JSON.stringify('Success!'),
-        };
-    } catch(err) {
-        response = {
-            statusCode: 400,
-            body: JSON.stringify(`Error! ${err}`),
-        };        
-    }
-    return response;
+// For Google Cloud Functions
+exports.gcfHandler = async (req, res) => {
+  try {
+      await lib.fileMirroringToS3();
+      res.status(200).send('Success!');
+  } catch(err) {
+      res.status(400).send(`Error! ${err}`);
+  }
 };
