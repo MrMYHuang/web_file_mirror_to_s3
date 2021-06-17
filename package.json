@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node ./node_modules/typescript/bin/tsc",
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +14,7 @@
     "@types/adm-zip": "^0.4.34",
     "adm-zip": "^0.5.5",
     "aws-sdk": "^2.929.0",
+    "chrome-aws-lambda": "^10.0.0",
     "puppeteer": "^10.0.0",
     "typescript": "^4.3.2",
     "xls-to-json": "^2.1.0"

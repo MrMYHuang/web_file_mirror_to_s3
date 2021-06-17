@@ -1,4 +1,5 @@
-FROM public.ecr.aws/lambda/nodejs:14
+FROM public.ecr.aws/p3l8q8e7/aws_lambda_nodejs:latest
+VOLUME /etc/localtime
 COPY *.js *.ts *.json ./
-RUN yum install -y at-spi2-atk atk cups libxkbcommon libXcomposite pango alsa-lib && npm install && npm run build
+RUN npm install --no-bin-links && npm run build
 CMD [ "index.handler" ]
