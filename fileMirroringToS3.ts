@@ -2,8 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import * as AdmZip from 'adm-zip';
 import AWS from 'aws-sdk';
-const chromium = require('chrome-aws-lambda');
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 import params from './params.json';
 const tempDir = './twchtemp';
 const node_xj = require("xls-to-json");
@@ -15,12 +14,10 @@ const s3bucket = new AWS.S3({
 
 export async function downloadSource() {
   const timeout = 5 * 60 * 1000;
-  const browser = await chromium.puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath,
-    headless: chromium.headless,
-    ignoreHTTPSErrors: true,
+  const browser = await puppeteer.launch({
+    executablePath: '/usr/bin/chrome',
+    headless: true,
+    args: ['--no-sandbox'],
   });
   const page = await browser.newPage();
   if (!fs.existsSync(tempDir)) {
@@ -95,7 +92,7 @@ export async function fileMirroringToS3() {
   try {
     await downloadSource();
     const data = Buffer.from(JSON.stringify(await xlsToJson()));
-    fs.rmSync(path.resolve(tempDir), {recursive: true, force: true});
+    //fs.rmSync(path.resolve(tempDir), {recursive: true, force: true});
     const zip = new AdmZip.default();
     zip.addFile('a.json', data);
     await uploadObjectToS3Bucket(params.S3_OBJECT_NAME, zip.toBuffer());

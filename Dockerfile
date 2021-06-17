@@ -1,5 +1,6 @@
-FROM public.ecr.aws/p3l8q8e7/aws_lambda_nodejs:latest
-VOLUME /etc/localtime
+FROM amazon/aws-lambda-nodejs:14
+ADD https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm chrome.rpm
+RUN yum install -y ./chrome.rpm
 COPY *.js *.ts *.json ./
-RUN npm install --no-bin-links && npm run build
+RUN npm install && npm run build
 CMD [ "index.handler" ]
