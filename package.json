@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "gcp-build": "",
+    "gcp-build": "npm ci",
     "build_image": "docker build -t mirror_tw_ch_data_to_s3 .",
     "pack": "rm a.zip && zip -r a.zip params.json package.json index.js .puppeteerrc.cjs dist",
     "start": "node index.js",
