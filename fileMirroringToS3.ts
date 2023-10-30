@@ -2,28 +2,29 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import * as AdmZip from 'adm-zip';
-import AWS from 'aws-sdk';
+import S3 from '@aws-sdk/client-s3';
 import puppeteer from 'puppeteer';
 import params from './params.json';
 const tempDir = `${os.tmpdir()}/twchtemp`;
 const node_xj = require("xls-to-json");
 
-const s3bucket = new AWS.S3({
-  accessKeyId: params.IAM_USER_KEY,
-  secretAccessKey: params.IAM_USER_SECRET
+const s3Client = new S3.S3Client({
+  credentials: {
+    accessKeyId: params.IAM_USER_KEY,
+    secretAccessKey: params.IAM_USER_SECRET
+  }
 });
 
 export async function downloadSource() {
   const timeout = 5 * 60 * 1000;
   const browser = await puppeteer.launch({
-    headless: true,
     args: ['--no-sandbox'],
   });
   const page = await browser.newPage();
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir);
   }
-  await (page as any)._client.send('Page.setDownloadBehavior', {
+  await (page as any)._client().send('Page.setDownloadBehavior', {
     behavior: 'allow',
     downloadPath: path.resolve(tempDir),
   });
@@ -71,34 +72,26 @@ async function xlsToJson() {
 }
 
 async function uploadObjectToS3Bucket(objectName: string, objectData: any) {
-  return new Promise<void>((ok, fail) => {
-    const s3params: AWS.S3.PutObjectRequest = {
-      Bucket: params.BUCKET_NAME,
-      Key: objectName,
-      Body: objectData,
-      ACL: 'public-read'
-    };
-    s3bucket.upload(s3params, function (err: Error, data: { Location: any; }) {
-      if (err) {
-        fail(err);
-        return;
-      }
 
-      ok();
-    });
-  });
+  const s3params: S3.PutObjectRequest = {
+    Bucket: params.BUCKET_NAME,
+    Key: objectName,
+    Body: objectData,
+    ACL: 'public-read'
+  };
+  await s3Client.send(new S3.PutObjectCommand(s3params));
 }
 
 export async function fileMirroringToS3() {
   try {
     await downloadSource();
     const data = Buffer.from(JSON.stringify(await xlsToJson()));
-    fs.rmSync(path.resolve(tempDir), {recursive: true, force: true});
+    fs.rmSync(path.resolve(tempDir), { recursive: true, force: true });
     const zip = new AdmZip.default();
     zip.addFile('a.json', data);
     await uploadObjectToS3Bucket(params.S3_OBJECT_NAME, zip.toBuffer());
     console.log(`File mirroring success!`);
   } catch (err) {
-    console.error(`File mirroring failed: ` + err);
+    throw new Error(`File mirroring failed: ` + err);
   }
 }
