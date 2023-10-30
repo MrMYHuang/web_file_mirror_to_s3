@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "gcp-build": "npm i",
+    "gcp-build": "",
     "build_image": "docker build -t mirror_tw_ch_data_to_s3 .",
-    "pack": "zip -r a.zip params.json package.json index.js dist",
+    "pack": "rm a.zip && zip -r a.zip params.json package.json index.js .puppeteerrc.cjs dist",
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -2,13 +2,14 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import * as AdmZip from 'adm-zip';
-import S3 from '@aws-sdk/client-s3';
+import {PutObjectCommand, S3Client, } from '@aws-sdk/client-s3';
 import puppeteer from 'puppeteer';
 import params from './params.json';
 const tempDir = `${os.tmpdir()}/twchtemp`;
 const node_xj = require("xls-to-json");
 
-const s3Client = new S3.S3Client({
+const s3Client = new S3Client({
+  region: params.REGION,
   credentials: {
     accessKeyId: params.IAM_USER_KEY,
     secretAccessKey: params.IAM_USER_SECRET
@@ -18,6 +19,7 @@ const s3Client = new S3.S3Client({
 export async function downloadSource() {
   const timeout = 5 * 60 * 1000;
   const browser = await puppeteer.launch({
+    headless: 'new',
     args: ['--no-sandbox'],
   });
   const page = await browser.newPage();
@@ -73,13 +75,12 @@ async function xlsToJson() {
 
 async function uploadObjectToS3Bucket(objectName: string, objectData: any) {
 
-  const s3params: S3.PutObjectRequest = {
+  await s3Client.send(new PutObjectCommand({
     Bucket: params.BUCKET_NAME,
     Key: objectName,
     Body: objectData,
     ACL: 'public-read'
-  };
-  await s3Client.send(new S3.PutObjectCommand(s3params));
+  }));
 }
 
 export async function fileMirroringToS3() {
