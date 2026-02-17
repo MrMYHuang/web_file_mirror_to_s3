@@ -2,8 +2,8 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import * as AdmZip from 'adm-zip';
-import {PutObjectCommand, S3Client, } from '@aws-sdk/client-s3';
-import puppeteer from 'puppeteer';
+import {PutObjectCommand, S3Client, GetBucketLocationCommand, } from '@aws-sdk/client-s3';
+import { chromium } from 'playwright';
 import params from './params.json';
 const tempDir = `${os.tmpdir()}/twchtemp`;
 const node_xj = require("xls-to-json");
@@ -18,38 +18,34 @@ const s3Client = new S3Client({
 
 export async function downloadSource() {
   const timeout = 5 * 60 * 1000;
-  const browser = await puppeteer.launch({
-    headless: 'new',
+  const browser = await chromium.launch({
+    headless: true,
     args: ['--no-sandbox'],
   });
-  const page = await browser.newPage();
-  if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir);
-  }
-  await (page as any)._client().send('Page.setDownloadBehavior', {
-    behavior: 'allow',
-    downloadPath: path.resolve(tempDir),
+  const context = await browser.newContext({
+    acceptDownloads: true,
   });
-  await page.goto(params.SOURCE_URL);
-  await page.setDefaultNavigationTimeout(timeout);
-  await page.click('#LinkButton1');
+  const page = await context.newPage();
+  fs.mkdirSync(tempDir, { recursive: true });
 
   try {
-    await new Promise<void>((ok, fail) => {
-      let downloadDoneChecker = setInterval(() => {
-        const files = fs.readdirSync(tempDir);
-        if (files.some((file: string) => !/.*crdownload$/.test(file))) {
-          clearInterval(downloadDoneChecker);
-          ok();
-        }
-      }, 500);
-    });
+    page.setDefaultNavigationTimeout(timeout);
+    await page.goto(params.SOURCE_URL);
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout }),
+      page.click('#LinkButton1', {
+        timeout
+      }),
+    ]);
+    await download.saveAs(path.resolve(tempDir, download.suggestedFilename()));
 
     console.log('File download done!');
-    await page.close();
-    await browser.close();
   } catch (error) {
-    throw `Download source error: ${error}`;
+    throw new Error(`Download source error: ${error}`);
+  } finally {
+    await page.close();
+    await context.close();
+    await browser.close();
   }
 }
 
@@ -74,13 +70,35 @@ async function xlsToJson() {
 }
 
 async function uploadObjectToS3Bucket(objectName: string, objectData: any) {
-
-  await s3Client.send(new PutObjectCommand({
+  const s3client = await getS3BucketClient();
+  await s3client.send(new PutObjectCommand({
     Bucket: params.BUCKET_NAME,
     Key: objectName,
     Body: objectData,
-    ACL: 'public-read'
   }));
+}
+
+async function getS3BucketClient() {
+  const location = await s3Client.send(new GetBucketLocationCommand({ Bucket: params.BUCKET_NAME }));
+  const bucketRegion = normalizeBucketRegion(location.LocationConstraint as unknown as string);
+
+  return new S3Client({
+    region: bucketRegion,
+    credentials: {
+      accessKeyId: params.IAM_USER_KEY,
+      secretAccessKey: params.IAM_USER_SECRET,
+    },
+  });
+}
+
+function normalizeBucketRegion(locationConstraint?: string) {
+  if (!locationConstraint) {
+    return 'us-east-1';
+  }
+  if (locationConstraint === 'EU') {
+    return 'eu-west-1';
+  }
+  return locationConstraint;
 }
 
 export async function fileMirroringToS3() {

@@ -1,6 +1,16 @@
-FROM amazon/aws-lambda-nodejs:14
-ADD https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm chrome.rpm
-RUN yum install -y ./chrome.rpm
-COPY *.js *.ts *.json ./
-RUN npm install && npm run build
-CMD [ "index.handler" ]
+# syntax=docker/dockerfile:1.4
+FROM mcr.microsoft.com/playwright:v1.58.2-jammy
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --include=dev
+
+COPY . .
+RUN npm run build && npm prune --omit=dev
+
+ENV NODE_ENV=production
+
+EXPOSE 8080
+
+CMD ["npm", "start"]

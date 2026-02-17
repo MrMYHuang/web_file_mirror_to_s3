@@ -1,0 +1,8 @@
+{
+    "BUCKET_NAME": "",
+    "REGION": "",
+    "IAM_USER_KEY": "",
+    "IAM_USER_SECRET": "",
+    "SOURCE_URL": "https://service.mohw.gov.tw/DOCMAP/CusSite/TCMLQueryForm.aspx",
+    "S3_OBJECT_NAME": "中藥藥品許可證資料集.zip"
+}

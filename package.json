@@ -1,14 +1,15 @@
 {
   "name": "web_file_mirror_to_s3",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
+    "start": "node dist/index.js",
     "gcp-build": "npm ci",
+    "gcp-deploy": "./scripts/gcp-deploy.sh",
     "build_image": "docker build -t mirror_tw_ch_data_to_s3 .",
-    "pack": "rm a.zip && zip -r a.zip params.json package.json index.js .puppeteerrc.cjs dist",
-    "start": "node index.js",
+    "pack": "rm a.zip && zip -r a.zip params.json package.json index.js dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -17,8 +18,13 @@
     "@aws-sdk/client-s3": "^3.438.0",
     "@types/adm-zip": "^0.4.34",
     "adm-zip": "^0.5.5",
-    "puppeteer": "^21.4.1",
+    "express": "^4.21.2",
+    "playwright": "^1.51.1",
     "typescript": "^5.2.2",
     "xls-to-json": "^2.1.1"
+  }
+  ,
+  "devDependencies": {
+    "@types/express": "^4.17.17"
   }
 }
