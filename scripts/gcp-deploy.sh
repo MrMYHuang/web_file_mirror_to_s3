@@ -15,7 +15,8 @@ gcloud run deploy "$SERVICE" \
 	--memory=1500Mi \
 	--cpu=1 \
 	--concurrency=80 \
-	--timeout=300s \
+	--no-deploy-health-check \
+	--timeout=500s \
 	--max-instances=20 \
 	--service-account=mrmyhuang@appspot.gserviceaccount.com \
 	--annotations=run.googleapis.com/startup-cpu-boost=true,run.googleapis.com/build-enable-automatic-updates=false

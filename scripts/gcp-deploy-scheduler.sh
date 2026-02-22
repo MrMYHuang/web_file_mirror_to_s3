@@ -5,7 +5,7 @@ gcloud scheduler jobs create http RunMirroringTWCHDataToS3 \
   --time-zone="Asia/Taipei" \
   --uri="https://mirroringtwchdatatos3-985914560096.asia-east1.run.app" \
   --http-method=GET \
-  --attempt-deadline=300s \
+  --attempt-deadline=600s \
   --min-backoff=5s \
   --max-backoff=3600s \
   --max-doublings=5 \
